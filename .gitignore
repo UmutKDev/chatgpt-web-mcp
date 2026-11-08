@@ -1,0 +1,6 @@
+node_modules
+dist
+.data
+*.log
+session*.json
+.env
