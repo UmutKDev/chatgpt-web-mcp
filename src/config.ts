@@ -137,7 +137,7 @@ export function loadConfig(argv: string[] = process.argv.slice(2)): AppConfig {
 
     defaultConversationUrl: str("CHATGPT_DEFAULT_URL"),
     generationTimeoutSec: int("GENERATION_TIMEOUT_SECONDS", 300, 30, 1800),
-    syncWaitSec: int("SYNC_WAIT_SECONDS", 240, 0, 1800),
+    syncWaitSec: int("SYNC_WAIT_SECONDS", 45, 0, 1800),
     readyTimeoutSec: int("READY_TIMEOUT_SECONDS", 45, 5, 600),
     maxImagesPerJob: int("MAX_IMAGES_PER_JOB", 4, 1, 10),
     maxImageBytes: int("MAX_IMAGE_BYTES", 25 * 1024 * 1024, 1024),

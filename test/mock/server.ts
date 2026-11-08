@@ -112,7 +112,12 @@ ${turns
       }
     }, 500);
   }
-  send.addEventListener('click', submit);
+  // A prompt containing SWALLOW ignores the first click, like a button that is not hydrated yet.
+  let swallowed = false;
+  send.addEventListener('click', () => {
+    if (box.innerText.includes('SWALLOW') && !swallowed) { swallowed = true; return; }
+    submit();
+  });
   box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
 </script>
 </body></html>`;
