@@ -1,0 +1,18 @@
+services:
+  chatgpt-web-mcp:
+    image: ghcr.io/umutkdev/chatgpt-web-mcp:latest
+    build: .
+    ports:
+      - "8099:8099"
+    environment:
+      CHATGPT_SESSION_STATE: ${CHATGPT_SESSION_STATE:-}
+      CHATGPT_SESSION_TOKEN: ${CHATGPT_SESSION_TOKEN:-}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8099}
+      TZ: ${TZ:-Europe/Istanbul}
+    volumes:
+      - chatgpt-data:/data
+    shm_size: 1gb
+    restart: unless-stopped
+volumes:
+  chatgpt-data:
