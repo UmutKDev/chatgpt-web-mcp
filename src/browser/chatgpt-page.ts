@@ -249,17 +249,66 @@ export class ChatGPTPage {
     }
   }
 
-  private async submit(): Promise<void> {
-    const send = this.page.locator(any(this.sel.send)).first();
-    const deadline = Date.now() + 30_000;
-    while (Date.now() < deadline) {
-      if ((await send.isVisible().catch(() => false)) && (await send.isEnabled().catch(() => false))) {
-        await send.click();
-        return;
+  private async userTurnCount(): Promise<number> {
+    return this.page
+      .locator(any(this.sel.userTurn))
+      .count()
+      .catch(() => 0);
+  }
+
+  private async composerText(): Promise<string> {
+    return this.page
+      .locator(any(this.sel.composer))
+      .first()
+      .evaluate((el) => ("value" in el ? String((el as HTMLTextAreaElement).value) : (el as HTMLElement).innerText) || "")
+      .catch(() => "");
+  }
+
+  /** True once ChatGPT has taken the prompt: a new turn, the stop button, or an emptied composer. */
+  private async promptAccepted(before: { turns: number; userTurns: number }): Promise<boolean> {
+    if (await this.isGenerating()) return true;
+    if ((await this.userTurnCount()) > before.userTurns) return true;
+    if ((await this.turnCount()) > before.turns) return true;
+    return (await this.composerText()).trim().length === 0;
+  }
+
+  /**
+   * Sends the typed prompt and checks that ChatGPT accepted it. A click can be swallowed
+   * (hidden duplicate button, overlay, page still hydrating), so each attempt uses a
+   * different method and is verified before moving on.
+   */
+  private async submit(before: { turns: number; userTurns: number }): Promise<void> {
+    const methods = ["click", "enter", "dom-click"] as const;
+    for (const [i, method] of methods.entries()) {
+      const send = this.page.locator(any(this.sel.send)).filter({ visible: true }).first();
+      const deadline = Date.now() + (i === 0 ? 30_000 : 5_000);
+      let ready = false;
+      while (Date.now() < deadline) {
+        if (await send.isEnabled().catch(() => false)) {
+          ready = true;
+          break;
+        }
+        await sleep(400);
       }
-      await sleep(400);
+      if (method === "click" && ready) {
+        await send.click({ timeout: 5_000 }).catch(() => {});
+      } else if (method === "dom-click" && ready) {
+        await send.evaluate((el) => (el as HTMLElement).click()).catch(() => {});
+      } else {
+        await this.page.locator(any(this.sel.composer)).first().focus().catch(() => {});
+        await this.page.keyboard.press("Enter");
+      }
+      const verifyUntil = Date.now() + 8_000;
+      while (Date.now() < verifyUntil) {
+        if (await this.promptAccepted(before)) return;
+        await sleep(400);
+      }
+      log.warn("prompt not accepted, retrying", { method });
     }
-    await this.page.keyboard.press("Enter");
+    throw new UserFacingError("ChatGPT did not accept the prompt: the send button had no effect.", "SEND_FAILED", {
+      retryable: true,
+      hint: "Run check_session with last_error_screenshot to see the page. If the UI changed, update the send selector via CHATGPT_SELECTORS_JSON.",
+    });
   }
 
   /** Sends one prompt and returns the images ChatGPT produced in reply. */
@@ -274,6 +323,7 @@ export class ChatGPTPage {
 
     const baseline = new Set((await this.listImages()).map((i) => i.src));
     const turnsBefore = await this.turnCount();
+    const userTurnsBefore = await this.userTurnCount();
 
     if (opts.files.length) {
       progress(`Uploading ${opts.files.length} reference image(s)`);
@@ -281,7 +331,7 @@ export class ChatGPTPage {
     }
     progress("Sending prompt");
     await this.typePrompt(opts.prompt);
-    await this.submit();
+    await this.submit({ turns: turnsBefore, userTurns: userTurnsBefore });
 
     const started = Date.now();
     const deadline = started + opts.timeoutMs;

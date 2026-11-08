@@ -11,6 +11,7 @@ export interface Selectors {
   attach: string[];
   newChat: string[];
   assistantTurn: string[];
+  userTurn: string[];
   generatedImage: string[];
   uploadPending: string[];
   loginMarkers: string[];
@@ -53,6 +54,7 @@ export const DEFAULT_SELECTORS: Selectors = {
     "article[data-testid^='conversation-turn']",
     "article",
   ],
+  userTurn: ["[data-message-author-role='user']"],
   generatedImage: [
     "img[src*='/backend-api/estuary/content']",
     "img[src*='oaiusercontent.com']",

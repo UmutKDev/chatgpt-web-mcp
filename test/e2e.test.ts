@@ -136,6 +136,13 @@ describe("e2e against mock ChatGPT", () => {
     expect(body.result.images).toHaveLength(2);
   });
 
+  it("retries when the send click is swallowed", async () => {
+    const before = mock.stats.messages.length;
+    const r = await client.callTool({ name: "generate_image", arguments: { prompt: "SWALLOW a blue kite" } });
+    expect(json(r).status, logs.slice(-3000)).toBe("succeeded");
+    expect(mock.stats.messages.length).toBe(before + 1);
+  });
+
   it("maps refusals and usage limits to clear errors", async () => {
     const refused = await client.callTool({ name: "generate_image", arguments: { prompt: "REFUSE this", raw_prompt: true } });
     expect(refused.isError).toBe(true);

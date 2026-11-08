@@ -128,7 +128,7 @@ Obot konteyneri yeniden başlatırsa `/data` silinebilir. Oturum yine env değer
 | `BROWSER_LOCALE`, `BROWSER_TIMEZONE`, `BROWSER_USER_AGENT` | `en-US`, `UTC` | Tarayıcı parmak izi. Hesabının bölgesine yakın değerler seç. |
 | `BROWSER_CHANNEL`, `BROWSER_EXECUTABLE_PATH` | | Belirli bir Chrome ya da Chromium kullanır. |
 | `GENERATION_TIMEOUT_SECONDS` | `300` | Tek bir görsel için en uzun bekleme. |
-| `SYNC_WAIT_SECONDS` | `240` | Araç çağrısının sonucu beklediği süre. Sonra `job_id` döner. |
+| `SYNC_WAIT_SECONDS` | `45` | Araç çağrısının sonucu beklediği süre. Sonra `job_id` döner. Claude gibi istemciler araç çağrısını 60 saniyede kestiği için bu değeri 60 saniyenin altında tut. |
 | `MAX_IMAGES_PER_JOB` | `4` | `count` üst sınırı. |
 | `MAX_CONCURRENT_JOBS` | `1` | Aynı anda çalışan sekme sayısı (en fazla 4). |
 | `MAX_QUEUE_LENGTH` | `20` | Bekleyen iş sınırı. |
@@ -152,6 +152,7 @@ Obot konteyneri yeniden başlatırsa `/data` silinebilir. Oturum yine env değer
 | `CONTENT_REFUSED` | İçerik politikası reddi. İstemi yeniden yaz. |
 | `NO_IMAGE_RETURNED` | ChatGPT metinle cevap verdi, örneğin bir soru sordu. Mesajı oku ve `refine_image` ile aynı sohbette cevapla. |
 | `GENERATION_TIMEOUT` | Görsel süresinde gelmedi. Görsel yine de sohbette belirebilir. |
+| `SEND_FAILED` | İstem yazıldı ama ChatGPT gönderimi almadı. Sunucu üç farklı yolla dener. Yine olmazsa `check_session` aracını `last_error_screenshot: true` ile çalıştır. |
 | `NAVIGATION_FAILED` | Giriş kutusu bulunamadı. `check_session` ile `screenshot: true` çalıştır. Arayüz değiştiyse `CHATGPT_SELECTORS_JSON` ile seçicileri güncelle. |
 
 ## Geliştirme
