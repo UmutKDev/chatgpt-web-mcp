@@ -4,3 +4,5 @@ dist
 *.log
 session*.json
 .env
+chatgpt-session*.json
+smoke-output/

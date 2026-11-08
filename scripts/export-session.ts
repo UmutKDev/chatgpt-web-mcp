@@ -25,14 +25,24 @@ async function main() {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "chatgpt-login-"));
   const executablePath = process.env.BROWSER_EXECUTABLE_PATH || undefined;
   const channel = executablePath ? undefined : process.env.BROWSER_CHANNEL || "chrome";
-  const ctx = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    channel,
-    executablePath,
-    viewport: null,
-    args: ["--disable-blink-features=AutomationControlled"],
-    ignoreDefaultArgs: ["--enable-automation"],
-  });
+  const launch = (ch?: string) =>
+    chromium.launchPersistentContext(profile, {
+      headless: false,
+      channel: ch,
+      executablePath,
+      viewport: null,
+      args: ["--disable-blink-features=AutomationControlled"],
+      ignoreDefaultArgs: ["--enable-automation"],
+    });
+  let ctx;
+  try {
+    ctx = await launch(channel);
+  } catch (err) {
+    // No Google Chrome installed: fall back to Microsoft Edge when the channel was not chosen explicitly.
+    if (executablePath || process.env.BROWSER_CHANNEL) throw err;
+    process.stderr.write("Google Chrome not found, trying Microsoft Edge…\n");
+    ctx = await launch("msedge");
+  }
   const page = ctx.pages()[0] ?? (await ctx.newPage());
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   process.stderr.write(`\nLog in to ChatGPT in the opened window (waiting up to ${TIMEOUT_MIN} min)…\n`);
