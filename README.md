@@ -172,7 +172,7 @@ Uçtan uca testler [`test/mock/server.ts`](test/mock/server.ts) içindeki sahte 
 - Oturum çerezleri loglara ve araç çıktılarına yazılmaz. Kalıcı oturum dosyası `0600` izinle saklanır.
 - URL girdileri özel ve yerel ağ adreslerine gidemez. Yerel dosyalar yalnız `ALLOWED_INPUT_DIRS` içinden okunur ve sembolik bağlantılar çözülerek kontrol edilir.
 - İndirme bağlantıları HMAC ile imzalanır ve 7 gün sonra geçersiz olur.
-- Konteyner root olmayan `pwuser` kullanıcısıyla çalışır. Taban imaj, playwright-core sürümüyle eşleşen resmî Playwright imajıdır.
+- Konteyner root olmayan `node` kullanıcısıyla çalışır. İmajda yalnız Chromium, Xvfb ve az sayıda font var.
 
 ## Esinlenilen projeler
 
