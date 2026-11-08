@@ -29,9 +29,9 @@ jobs:
           docker run --rm chatgpt-web-mcp:smoke node -e "require('playwright-core').chromium.launch({headless:false}).then(async b=>{const p=await b.newPage();await p.setContent('<h1>ok</h1>');console.log('chromium', b.version(), await p.textContent('h1'));await b.close()}).catch(e=>{console.error(e);process.exit(1)})"
       - name: Server answers /healthz
         run: |
-          docker run -d --name s -p 8099:8099 chatgpt-web-mcp:smoke
+          docker run -d --name mcp-smoke -p 8099:8099 chatgpt-web-mcp:smoke
           for i in $(seq 1 30); do curl -fsS localhost:8099/healthz && exit 0; sleep 1; done
-          docker logs s; exit 1
+          docker logs mcp-smoke; exit 1
 
   image:
     needs: smoke
