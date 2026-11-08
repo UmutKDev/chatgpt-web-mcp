@@ -1,0 +1,134 @@
+name: ChatGPT Web Image
+entryKey: chatgpt-web-image
+serverUserType: singleUser
+shortDescription: Generate, edit and iterate on images with your own ChatGPT account
+description: |
+  Generate and edit images with ChatGPT's image generation through your own logged-in ChatGPT web session. Setup and session export are described in the [project README](https://github.com/UmutKDev/chatgpt-web-mcp#readme).
+
+  ## Features
+  - **Generate**: text-to-image with aspect ratio, style presets, exact in-image text, negative prompts and transparent backgrounds
+  - **Edit**: change uploaded images (library ids, URLs or base64) with natural-language instructions and extra reference images
+  - **Refine**: iterate inside the same ChatGPT conversation for consistent successive edits
+  - **Variations**: several alternatives of an image in one call
+  - **Profiles**: reusable character and style profiles with reference images for consistency
+  - **Library**: every image is stored with its prompt and conversation, readable as an MCP resource
+  - **Jobs**: long generations continue as background jobs that can be polled or cancelled
+
+  ## What you'll need to connect
+
+  **Required (one of):**
+  - **ChatGPT session**: the base64 value printed by `npm run export-session` (recommended), or
+  - **Session token**: the value of the `__Secure-next-auth.session-token` cookie
+
+  This server drives the ChatGPT website, not the OpenAI API. Automating the website may conflict with OpenAI's Terms of Use; you are responsible for how you use your account.
+metadata:
+  categories: Design & Creative, Image Generation
+icon: https://raw.githubusercontent.com/UmutKDev/chatgpt-web-mcp/main/docs/icon.svg
+repoURL: https://github.com/UmutKDev/chatgpt-web-mcp
+
+runtime: containerized
+containerizedConfig:
+  image: ghcr.io/umutkdev/chatgpt-web-mcp:0.1.0
+  port: 8099
+  path: /mcp
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 3Gi
+
+env:
+  - key: CHATGPT_SESSION_STATE
+    name: ChatGPT session
+    description: Base64 Playwright storage state from `npm run export-session`. Contains your login cookies; treat it like a password.
+    required: false
+    sensitive: true
+  - key: CHATGPT_SESSION_TOKEN
+    name: ChatGPT session token
+    description: Alternative to the session above. The value of the __Secure-next-auth.session-token cookie from chatgpt.com.
+    required: false
+    sensitive: true
+  - key: CHATGPT_DEFAULT_URL
+    name: Default chat URL
+    description: Optional ChatGPT Project or custom GPT URL where new chats start, e.g. https://chatgpt.com/g/g-p-XXXX/project
+    required: false
+    sensitive: false
+  - key: BROWSER_PROXY_SERVER
+    name: Browser proxy
+    description: Optional proxy for the browser (e.g. http://proxy:3128). A residential proxy reduces human-verification challenges.
+    required: false
+    sensitive: false
+  - key: BROWSER_PROXY_USERNAME
+    name: Browser proxy username
+    required: false
+    sensitive: false
+  - key: BROWSER_PROXY_PASSWORD
+    name: Browser proxy password
+    required: false
+    sensitive: true
+  - key: RETURN_MODE
+    name: Result format
+    description: How images are returned to the client.
+    required: false
+    sensitive: false
+    options:
+      - name: Inline image and resource link
+        value: both
+      - name: Inline image only
+        value: image
+      - name: Resource link only (smallest responses)
+        value: link
+
+toolPreview:
+  - name: generate_image
+    description: Create new image(s) from a text prompt with ChatGPT's image generation.
+    params:
+      prompt: What to create
+      images: Optional reference images (library ids, URLs, data URIs)
+      count: Number of images
+      aspect_ratio: 1:1, 3:2, 2:3, 4:3, 3:4, 16:9, 9:16 or 21:9
+      style_preset: Built-in art direction (photorealistic, logo, anime, …)
+      character_profile: Saved character profile
+      conversation: Continue an existing ChatGPT conversation
+      wait: false returns a job id immediately
+  - name: edit_image
+    description: Edit an existing image with a natural-language instruction.
+    params:
+      images: Image to edit, plus optional references
+      instruction: What to change
+  - name: refine_image
+    description: Iterate on an image inside the ChatGPT conversation that produced it.
+    params:
+      image_id: Library image id
+      instruction: What to change
+  - name: create_variations
+    description: Produce alternative versions of an image.
+    params:
+      image_id: Library image id
+      count: Number of variations
+  - name: get_job
+    description: Status and result of an image job, optionally waiting for completion.
+    params:
+      job_id: Job id
+      wait_seconds: Seconds to wait
+  - name: list_images
+    description: Browse the image library.
+    params:
+      query: Text to match in prompts
+  - name: get_image
+    description: Return a stored image with its metadata.
+    params:
+      image_id: Library image id
+  - name: save_profile
+    description: Save a reusable character or style profile.
+    params:
+      name: Profile name
+      kind: character or style
+      description: Profile text
+  - name: check_session
+    description: Check that the ChatGPT login works, optionally with a screenshot.
+    params:
+      screenshot: Return a screenshot

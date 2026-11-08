@@ -1,0 +1,2 @@
+# Only the catalog entries in obot/ are Obot MCP servers
+obot/*.yaml

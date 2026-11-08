@@ -1,0 +1,70 @@
+# Standalone deployment (outside Obot). Create the secret first:
+#   kubectl create secret generic chatgpt-web-mcp \
+#     --from-file=CHATGPT_SESSION_STATE=chatgpt-session.json \
+#     --from-literal=MCP_AUTH_TOKEN=$(openssl rand -hex 24)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatgpt-web-mcp
+spec:
+  replicas: 1   # one browser per ChatGPT account; do not scale horizontally
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: chatgpt-web-mcp }
+  template:
+    metadata:
+      labels: { app: chatgpt-web-mcp }
+    spec:
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: server
+          image: ghcr.io/umutkdev/chatgpt-web-mcp:0.1.0
+          ports:
+            - containerPort: 8099
+          envFrom:
+            - secretRef:
+                name: chatgpt-web-mcp
+          env:
+            - name: TZ
+              value: Europe/Istanbul
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8099 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8099 }
+            initialDelaySeconds: 20
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+            limits: { cpu: "2", memory: 3Gi }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: shm, mountPath: /dev/shm }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: chatgpt-web-mcp-data
+        - name: shm
+          emptyDir: { medium: Memory, sizeLimit: 1Gi }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chatgpt-web-mcp-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatgpt-web-mcp
+spec:
+  selector: { app: chatgpt-web-mcp }
+  ports:
+    - port: 8099
+      targetPort: 8099
