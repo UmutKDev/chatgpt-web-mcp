@@ -61,7 +61,12 @@ async function main() {
   const state = await ctx.storageState();
   const trimmed = {
     cookies: state.cookies.filter((c) => KEEP.test(c.domain.replace(/^\./, ""))),
-    origins: state.origins.filter((o) => KEEP.test(new URL(o.origin).hostname)),
+    // Drop big localStorage caches (e.g. a ~1 MB statsig entry on auth.openai.com):
+    // they are not needed for the login and would exceed env/Secret size limits.
+    origins: state.origins
+      .filter((o) => KEEP.test(new URL(o.origin).hostname))
+      .map((o) => ({ ...o, localStorage: o.localStorage.filter((e) => e.name.length + e.value.length <= 2048) }))
+      .filter((o) => o.localStorage.length > 0),
   };
   if (!trimmed.cookies.some((c) => c.name.startsWith("__Secure-next-auth.session-token"))) {
     process.stderr.write("Warning: no __Secure-next-auth.session-token cookie found; the export may not work.\n");
@@ -71,7 +76,7 @@ async function main() {
   fs.rmSync(profile, { recursive: true, force: true });
 
   const b64 = Buffer.from(JSON.stringify(trimmed)).toString("base64");
-  process.stderr.write(`\nSaved ${trimmed.cookies.length} cookies to ${OUT}\n`);
+  process.stderr.write(`\nSaved ${trimmed.cookies.length} cookies to ${OUT} (${Math.round(b64.length / 1024)} KB as base64)\n`);
   process.stderr.write("Paste the following line into CHATGPT_SESSION_STATE (treat it like a password):\n\n");
   process.stdout.write(`${b64}\n`);
 }
